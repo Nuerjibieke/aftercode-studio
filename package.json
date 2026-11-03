@@ -1,0 +1,21 @@
+{
+  "name": "aftercode-intent-lab",
+  "version": "0.3.0",
+  "private": true,
+  "description": "A feature acceptance workspace with source-linked logic, real Web/Node/Python runs and an optional model gateway.",
+  "scripts": {
+    "dev": "node --env-file-if-exists=.env server.js",
+    "start": "node --env-file-if-exists=.env server.js",
+    "test": "node --test core.test.js tests/*.test.js",
+    "test:browser": "node --test browser.test.js tests/*.browser.js",
+    "check": "node --check core.js && node --check ide.js && node --check bridge.js && node --check projects.js && node --check server.js && node --check domain/acceptance.js && node --check analysis/index.js && node --check runtime/runner.js && node --check agent/gateway.js && node --check ui/acceptance-view.js && node --check ui/acceptance-controller.js && node --check domain/repairs.js && node --check ui/studio-view.js && node --check ui/focus-view.js && node --check ui/functional-map.js && node --check ui/round-view.js && node --check ui/repair-controller.js && node --check ui/repair-view.js && node --check ui/i18n.js && node --check ui/i18n-en.js"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "@babel/parser": "^7.28.0",
+    "acorn": "^8.19.0",
+    "playwright": "^1.64.1"
+  }
+}

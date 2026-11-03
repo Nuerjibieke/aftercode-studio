@@ -1,0 +1,17 @@
+node_modules/
+.DS_Store
+.env
+.env.*
+!.env.example
+*.log
+.private/
+.tools/
+exports/
+backups/
+verification/
+coverage/
+test-results/
+playwright-report/
+*-investigation.json
+investigation.json
+preview-*.png
