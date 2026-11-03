@@ -431,5 +431,7 @@ window.AftercodeEnglish = Object.freeze({
   "按这个问题深入分析": "Analyze this question",
   "源码": "Source",
   "个实现节点": " implementation nodes",
-  "暂无控制台输出": "No console output yet"
+  "暂无控制台输出": "No console output yet",
+  "待处理问题": "Open issues",
+  "模型释义": "Model interpretation"
 });

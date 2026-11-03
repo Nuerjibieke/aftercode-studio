@@ -42,3 +42,15 @@ test('the complete English repair flow sends the chosen response language and ke
 test('the language switch and English acceptance view remain usable on mobile', {timeout:60000},async()=>{
  const {context,page}=await open({locale:'en',width:390});try{assert.equal(await page.locator('#ac-language-toggle').isVisible(),true);await overview(page);assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));await page.locator('#ac-language-toggle').click();assert.equal(await page.locator('html').getAttribute('lang'),'zh-CN');assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));}finally{await context.close();}
 });
+
+test('generated logic captions are localized while graph data, source expressions and identifiers stay intact', {timeout:60000},async()=>{
+ const {context,page}=await open({locale:'en'});try{
+  await page.locator('[data-acceptance-action="drill-feature"][data-id="complete"]').click();
+  const node=await page.evaluate(()=>AcceptanceApp.state.graph.nodes.find(n=>n.type==='calculation'&&String(n.detail).includes('count + 2')));
+  await page.locator('.ac-logic-node[data-id="'+node.id+'"]').click();
+  assert.equal(await page.locator('.fx-details h2').innerText(),'Calculate: count + 2');
+  assert.ok((await page.locator('.fx-rule-expression code').innerText()).includes('count + 2'));
+  assert.equal(await page.evaluate(id=>AcceptanceApp.state.graph.nodes.find(n=>n.id===id).label,node.id),node.label);
+  await page.locator('#ac-language-toggle').click();assert.equal(await page.locator('.fx-details h2').innerText(),node.label);
+ }finally{await context.close();}
+});

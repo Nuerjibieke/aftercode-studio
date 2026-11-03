@@ -9,6 +9,7 @@
   const names='#project-name,#header-name,#header-name *,#active-file,#file-tree,.file-tab,h1,.ac-case-main>b,.ac-case-main>strong,.ac-logic-node b,.ac-feature strong,.ac-feature b,.fm-feature strong,.fm-feature b,.fm-value strong,.fm-value b,.fm-heading h2,.st-nav-project span,.st-finding-nav span,.fx-details h2,.st-module-grid button strong,.history-list article b';
   const plural=(n,word)=>n+' '+word+(Number(n)===1?'':'s');
   const patterns=[
+    [/^(.+?) · (已观察|模型释义)$/,(_,kind,status)=>t(kind)+' · '+t(status)],
     [/^(\d+) 个可展开的功能或入口$/,(_,n)=>plural(n,'feature or entry point')+' to explore'],
     [/^(\d+) 个相关节点$/,(_,n)=>plural(n,'related node')],
     [/^应该得到 (.+)$/s,(_,value)=>'Expected '+value],
@@ -19,7 +20,7 @@
     [/^待处理问题 (\d+)$/,(_,n)=>'Open issues: '+n],
     [/^已记录 (\d+) 次运行$/,(_,n)=>plural(n,'run')+' recorded'],
     [/^(\d+) 个文件 · (\d+) 处修改$/,(_,a,b)=>plural(a,'file')+' · '+plural(b,'change')],
-    [/^已按原标准重验 (\d+) 项，(\d+) 项符合预期$/,(_,a,b)=>'Rechecked '+plural(a,'original criterion')+': '+b+' passed'],
+    [/^已按原标准重验 (\d+) 项，(\d+) 项符合预期$/,(_,a,b)=>'Rechecked '+a+' original '+(Number(a)===1?'criterion':'criteria')+': '+b+' passed'],
     [/^保留原验收标准，重验 (\d+) 个已确认的情况。$/,(_,n)=>'Keep the original criteria and rerun '+plural(n,'confirmed case')+'.'],
     [/^后台验收 (\d+) \/ (\d+)：(.*)$/s,(_,a,b,c)=>'Checking '+a+' / '+b+': '+c],
     [/^(.+) · 第 (\d+) 行$/,(_,file,n)=>file+' · line '+n],
@@ -49,10 +50,22 @@
     }
     return [...s.cases,...(s.archivedCases||[])].some(c=>c.origin==='sample-task'&&c.title===source)&&Boolean(node.parentElement.closest('.ac-case,.fx-details,.history-list,.st-finding-nav'));
   }
+  function logicCaption(el,value){
+    const state=window.AcceptanceApp?.state;
+    const id=el.closest('.ac-logic-node')?.dataset.id || (el.matches('.fx-details h2')&&state?.detailContext?.kind==='node'?state.detailContext.id:null);
+    const node=state?.graph.nodes.find(n=>n.id===id);
+    if(!node||node.interpretation?.label)return null;
+    if(node.type==='function'&&node.label==='回调'&&['回调','进入这段处理'].includes(value))return value==='回调'?'Callback':'Enter handler';
+    if(value!==node.label)return null;
+    if(node.type==='calculation'&&value.startsWith('计算：'))return 'Calculate: '+value.slice(3);
+    if(['state','effect','output'].includes(node.type)&&value.startsWith('更新'))return 'Update '+value.slice(2).trim();
+    if(node.type==='effect'&&value==='等待异步结果')return 'Await async result';
+    return null;
+  }
   function protectedText(node,source){
     const el=node.parentElement;
     if(!el||el.closest('#ac-language-toggle')||el.closest(hardProtected))return true;
-    return Boolean(el.closest(names))&&!sampleName(node,source);
+    return Boolean(el.closest(names))&&!sampleName(node,source)&&logicCaption(el,source)===null;
   }
   function sourceFor(node){
     const prior=texts.get(node);
@@ -61,7 +74,7 @@
   function renderText(node){
     const source=sourceFor(node),parts=source.match(/^(\s*)([\s\S]*?)(\s*)$/),value=parts[2];
     if(!value||protectedText(node,value))return;
-    let translated=t(value);
+    let translated=locale==='en'?(logicCaption(node.parentElement,value)??t(value)):value;
     if(locale==='en'&&node.parentElement.closest('.st-stat-row')&&/^\d+$/.test(node.previousSibling?.textContent||''))translated=({'验收点':'checks','符合':'passed','待核对':'to review','尚无结论':'not checked'})[value]||translated;
     if(locale==='en'&&translated!==value&&/^[A-Za-z]/.test(translated)&&/^\d+$/.test(node.previousSibling?.textContent||''))translated=' '+translated;
     const rendered=parts[1]+translated+parts[3];texts.set(node,{source,rendered});if(node.nodeValue!==rendered)node.nodeValue=rendered;
@@ -86,7 +99,7 @@
         for(const name of ['title','aria-label','placeholder']){
           if(!el.hasAttribute(name))continue;
           const value=el.getAttribute(name),record=prior[name];const source=record&&value===record.rendered?record.source:value;
-          const rendered=t(source);prior[name]={source,rendered};if(value!==rendered)el.setAttribute(name,rendered);
+          const rendered=locale==='en'?(logicCaption(el,source)??t(source)):source;prior[name]={source,rendered};if(value!==rendered)el.setAttribute(name,rendered);
         }
         attributes.set(el,prior);
       }
